@@ -1,0 +1,31 @@
+<launch>
+<!-- <arg name="use_jsp" default="False"/> -->
+<!-- load the yaml parameters -->
+  <rosparam command="load" file="$(find homework2)/config/arm.yaml"/>
+
+  <!-- load the urdf into the parameter server -->
+  <param name="robot_description" command ="$(find xacro)/xacro $(find homework2)/urdf/twoarm.urdf.xacro" />
+
+ 
+  <!-- <group if="$(eval arg('use_jsp')=='False')"> -->
+  <!-- rviz will enable us to see the robot -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find homework2)/config/arm_view.rviz"/>
+  <!-- node name="rviz" pkg="rviz" type="rviz" args="-d $(find me495_urdf)/rviz/view_robot.rviz" /-->
+
+  <!-- Load arm trajectory-->
+  <node name="arm_traj" pkg="homework2" type="arm_traj"/>
+
+  <!-- marker-->
+  <node name="arm_marker" pkg="homework2" type="arm_marker"/>
+
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+  <!-- </group> -->
+  
+  <!-- <group if="$(eval arg('use_jsp')=='True')">
+  
+     <node name="joint_state_publisher_gui" pkg="joint_state_publisher_gui" type="joint_state_publisher_gui"/> 
+  </group> -->
+
+
+</launch>

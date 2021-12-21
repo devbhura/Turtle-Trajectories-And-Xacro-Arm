@@ -1,0 +1,36 @@
+<launch>
+<arg name="mode" default="sim"/>
+
+  <group if="$(eval arg('mode')=='sim')">
+  <!-- load the yaml parameters -->
+  <rosparam command="load" file="$(find homework2)/config/trajectory.yaml"/>
+  <param name="robot_description" command ="$(find xacro)/xacro $(find turtlebot3_description)/urdf/turtlebot3_burger.urdf.xacro" />
+  <node name="turtle_simulator" pkg="turtlesim" type="turtlesim_node" />
+  <node name ="simodom" pkg="homework2" type = "simodom" />
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/>
+
+  <node name ="trajectory" pkg="homework2" type = "trajectory" >
+  
+
+  <param name="pub_freq" value="10"/>
+  <param name="mode" value="0"/>
+
+  </node>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find homework2)/config/turtle_view.rviz"/>
+  
+  </group>
+
+  <group if="$(eval arg('mode')=='real')">
+    <rosparam command="load" file="$(find homework2)/config/trajectory.yaml"/>
+    <node name ="trajectory" pkg="homework2" type = "trajectory" >
+  
+      <param name="mode" value="1"/>
+      <param name="pub_freq" value="10"/>
+
+    </node>
+
+  </group>
+
+
+</launch>

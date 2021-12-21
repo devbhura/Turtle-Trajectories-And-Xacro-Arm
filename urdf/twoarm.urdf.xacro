@@ -1,0 +1,147 @@
+<?xml version="1.0"?>
+<robot name="twoarm" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+
+
+<!-- Load the parameters from yaml file -->
+
+<xacro:property name="armyaml" value="$(find homework2)/config/arm.yaml" />
+<xacro:property name="arm" value="${load_yaml(armyaml)}"/>
+<xacro:property name="L1" value="${arm['L1']}" />
+<xacro:property name="L2" value="${arm['L2']}" />
+<xacro:property name="R1" value="${arm['R1']}" />
+<xacro:property name="R2" value="${arm['R2']}" />
+<xacro:property name="m" value="1" />
+
+<!-- Base -->
+
+<link name="base_link" >
+  <visual>
+    <geometry>
+      <sphere radius="0.1" />
+     </geometry>
+     <material name="blue_mat">
+         <color rgba="0 0 1 1" />
+     </material>
+   </visual>
+
+</link>
+
+<joint name="theta1" type="continuous">
+  <origin xyz="0 0 0" rpy="0 0 0" />
+  <axis xyz =" 0 0 1"/>
+  <parent link="base_link" />
+  <child link="arm1" />
+</joint>
+
+<!--Arm 1-->
+<link name="arm1" >
+  <visual>
+  <origin xyz="${0.1+ L1/2} 0 0" rpy="0 ${pi/2} 0" />
+    <geometry>
+      <cylinder radius="${R1}" length="${L1}"/>
+     </geometry>
+     <material name="green_mat">
+         <color rgba="0 1 0 1" />
+     </material>
+   </visual>
+
+    <inertial>
+        <origin xyz="${0.1+ L1/2} 0 0" rpy="0 ${pi/2} 0" />
+        <mass value="1"/>
+        <inertia ixx="${(1.0/12.0)*m*(3*R1**2 + L1**2)}"
+          ixy="0"  
+          ixz="0" 
+          iyy="${(1.0/12.0)*m*(3*R1**2 + L1**2)}" 
+          iyz="0" 
+          izz="${0.5*m*R1**2}" />
+    </inertial>
+
+    <collision>
+      <origin xyz="${0.1+ L1/2} 0 0" rpy="0 ${pi/2} 0" />
+      <geometry>
+        <cylinder radius="${R1}" length="${L1}"/>
+     </geometry>
+    </collision>
+
+</link>
+
+<joint name="theta2" type="continuous">
+  <origin xyz="${L1} 0 0" rpy="0 0 0" />
+  <axis xyz =" 0 0 1"/>
+  <parent link="arm1" />
+  <child link="arm2" />
+</joint>
+
+<!--Arm 2-->
+<link name="arm2" >
+  <visual>
+  <origin xyz="${L2/2} 0 0" rpy="0 ${pi/2} 0" />
+    <geometry>
+      <cylinder radius="${R2}" length="${L2}"/>
+     </geometry>
+     <material name="red_mat">
+         <color rgba="0.8 0.2 0.1 1" />
+     </material>
+   </visual>
+
+    <inertial>
+        <origin xyz="${L2/2} 0 0" rpy="0 ${pi/2} 0" />
+        <mass value="1"/>
+        <inertia ixx="${(1.0/12.0)*m*(3*R2**2 + L2**2)}"
+          ixy="0"  
+          ixz="0" 
+          iyy="${(1.0/12.0)*m*(3*R2**2 + L2**2)}" 
+          iyz="0" 
+          izz="${0.5*m*R2**2}" />
+    </inertial>
+
+    <collision>
+      <origin xyz="${L2/2} 0 0" rpy="0 ${pi/2} 0" />
+      <geometry>
+        <cylinder radius="${R2}" length="${L2}"/>
+     </geometry>
+    </collision>
+
+</link>
+
+<joint name="ee_joint" type="continuous">
+  <origin xyz="${L2} 0 0" rpy="0 0 0" />
+  <axis xyz =" 0 0 1"/>
+  <parent link="arm2" />
+  <child link="end_effector" />
+</joint>
+
+<!--End Effector-->
+<link name="end_effector" >
+  <visual>
+  <origin xyz="0.1 0 0" rpy="0 ${pi/2} 0" />
+    <geometry>
+      <sphere radius="0.1" />
+     </geometry>
+     <material name="orange_mat">
+         <color rgba="0.3 0.6 0.2 1" />
+     </material>
+   </visual>
+
+    <inertial>
+        <origin xyz="0.1 0 0" rpy="0 ${pi/2} 0" />
+        <mass value="0.1"/>
+        <inertia ixx="${(2/3)*m*(0.1**2)}"
+          ixy="0"  
+          ixz="0" 
+          iyy="${(2/3)*m*(0.1**2)}"
+          iyz="0" 
+          izz="${(2/3)*m*(0.1**2)}" />
+    </inertial>
+
+    <collision>
+      <origin xyz="0.1 0 0" rpy="0 ${pi/2} 0" />
+      <geometry>
+        <sphere radius="0.1" />
+     </geometry>
+    </collision>
+
+</link>
+
+</robot>

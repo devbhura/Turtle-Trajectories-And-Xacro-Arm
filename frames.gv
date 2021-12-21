@@ -1,0 +1,9 @@
+digraph G {
+"arm2" -> "end_effector"[label="Broadcaster: /robot_state_publisher\nAverage rate: 20.065 Hz\nMost recent transform: 1634588468.596 ( 0.011 sec old)\nBuffer length: 4.984 sec\n"];
+"arm1" -> "arm2"[label="Broadcaster: /robot_state_publisher\nAverage rate: 20.065 Hz\nMost recent transform: 1634588468.596 ( 0.011 sec old)\nBuffer length: 4.984 sec\n"];
+"base_link" -> "arm1"[label="Broadcaster: /robot_state_publisher\nAverage rate: 20.065 Hz\nMost recent transform: 1634588468.596 ( 0.011 sec old)\nBuffer length: 4.984 sec\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 1634588468.607"[ shape=plaintext ] ;
+ }->"base_link";
+}

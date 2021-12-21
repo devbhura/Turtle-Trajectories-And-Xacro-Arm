@@ -1,0 +1,107 @@
+#!/usr/bin/env python
+
+"""
+Shows marker at end effector for 5 seconds. 
+
+Publishers: 
+    Marker (visualization_msgs/Marke)r - helps visualize markers
+
+Parameters:
+    T: the period of 1 trajectory
+
+Listeners:
+    tf2_ros
+"""
+
+import rospy 
+import tf2_ros
+from geometry_msgs.msg import Twist, Pose, Point, TransformStamped
+from visualization_msgs.msg import Marker
+from sensor_msgs.msg import JointState
+
+
+class arm_marker():
+    """ Draw markers at end-effector position
+    """
+
+    def __init__(self):
+
+        self.T = rospy.get_param("T")
+
+        #initialize publisher
+        self.mark_pub = rospy.Publisher("visualization", Marker, queue_size=10)
+        self.rate = rospy.Rate(10)
+
+        # initialize listener
+        self.buffer = tf2_ros.Buffer()
+        self.listener = tf2_ros.TransformListener(self.buffer)
+        id = 0
+
+        while not rospy.is_shutdown():
+            
+            # lookup the end effector position
+            try:
+                pos = self.buffer.lookup_transform("base_link","end_effector",rospy.Time())
+            except:
+                continue
+            posx = pos.transform.translation.x 
+            posy = pos.transform.translation.y + 0.1
+            
+            # rospy.logerr(f"pos:{posx}")
+            # define marker
+            marker = Marker()
+            marker.ns = "marker_ns"
+            marker.header.frame_id = "base_link"
+            marker.header.stamp = rospy.Time.now()
+            marker.id = id
+            marker.lifetime = rospy.Duration(self.T/5)
+            marker.action = Marker.ADD
+            marker.scale.x = 0.1
+            marker.scale.y = 0.1
+            marker.scale.z = 0.1
+
+            if posx>0:
+                marker.type = Marker.SPHERE
+                marker.color.a = 1.0
+                marker.color.r = 0.5
+                marker.color.g = 0.3
+                marker.color.b = 0
+
+            else:
+                marker.type = Marker.CUBE
+                marker.color.a = 1.0
+                marker.color.r = 0.0
+                marker.color.g = 0.5
+                marker.color.b = 0.1
+
+            marker.pose.position.x = posx
+            marker.pose.position.y = posy
+            marker.pose.position.z = 0
+
+            marker.pose.orientation.x = 0
+            marker.pose.orientation.y = 0
+            marker.pose.orientation.z = 0
+            marker.pose.orientation.w = 1
+
+            self.mark_pub.publish(marker)
+
+            id += 1
+
+            self.rate.sleep()
+
+
+def main():
+    rospy.init_node("arm_marker")   
+
+    a = arm_marker()
+
+    rospy.spin()
+
+
+if __name__ == "__main__":
+    try:
+        main()
+
+    except rospy.ROSInterruptException:
+        pass
+    

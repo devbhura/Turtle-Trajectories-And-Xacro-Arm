@@ -1,0 +1,91 @@
+#!/usr/bin/env python
+
+"""
+Creates trajectory for the end effector to follow
+
+Publishers:
+    joint_states (sensor_msgs/JointState): Publishes the joint states of the 2 link arm
+
+Parameters:
+    L1: the length of the first link
+    L2: the length of the second link
+    T: the period of 1 trajectory
+
+"""
+import rospy
+import numpy as np
+from sensor_msgs.msg import JointState
+from std_msgs.msg import Header
+import time
+
+
+class arm_traj:
+
+
+    def __init__(self):
+
+        
+        self.L1 = rospy.get_param("L1")
+        self.L2 = rospy.get_param("L2")
+        self.T = rospy.get_param("T")
+        self.h = (2/3)*(self.L1 + self.L2)
+        self.initial_t = rospy.get_time()
+        self.rate = rospy.Rate(20)
+        self.pub = rospy.Publisher("joint_states", JointState, queue_size= 10)
+        
+        while not rospy.is_shutdown():
+
+            self.rate = rospy.Rate(20)
+            self.t = rospy.get_time() - self.initial_t
+            self.x = 0.9*(np.cos(2*np.pi*self.t/self.T))*(np.sqrt((self.L1+self.L2)**2 - self.h**2))
+            self.y = (2/3)*(self.L1 + self.L2)
+
+            [self.theta1, self.theta2] = self.inverse_kinematics()
+
+            self.theta3 = 0 
+            # rospy.logerr(f"angles:{self.theta1,self.theta2}")
+            joint_move = JointState()
+            joint_move.header.stamp = rospy.Time.now()
+            joint_move.header.frame_id = "base_link"
+            joint_move.name = ['theta1','theta2','ee_joint']
+            joint_move.position = [self.theta1, self.theta2, self.theta3]
+            joint_move.velocity = []
+            joint_move.effort = []
+
+            self.pub.publish(joint_move)
+            
+            self.rate.sleep()
+
+
+
+    def inverse_kinematics(self):
+        """
+        Arguments: None
+        Returns: 
+        theta1 (float): the joint angle for the first arm
+        theta2 (float): the joint angle for the second arm
+        Function: Calculates the inverse kinematics for the 2 arm robot
+                using the equations from the book Modern Robotics Pg. 238
+        """
+        alpha = np.arccos((self.x**2 + self.y**2 + self.L1**2 - self.L2**2)/(2*self.L1*np.sqrt(self.x**2+self.y**2)))
+        beta = np.arccos(( - self.x**2 - self.y**2 + self.L1**2 + self.L2**2)/(2*self.L1*self.L2))
+        gamma = np.arctan2(self.y,self.x)
+
+        theta1 = gamma - alpha
+        theta2 = np.pi - beta
+        
+        return theta1, theta2
+
+
+def main():
+    rospy.init_node('arm_traj')
+    traj = arm_traj()
+    rospy.spin()
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except rospy.ROSInterruptException:
+        pass
+

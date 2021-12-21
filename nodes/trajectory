@@ -1,0 +1,130 @@
+#!/usr/bin/env python
+
+"""
+Publishes the velocity for the turtlebot3
+Publishers: 
+    cmd_vel (geometry_msgs/Twist): linear and angular velocity for turtlebot3
+
+Services:
+    resume (Empty): resume the moving of turtlebot3
+    pause (Empty): stop the turtlebot3
+
+Broadcaster:
+    Static transform between the world and odom
+
+Parameters:
+    width: The width of the figure eight
+    height: The height of the figure eight
+    period: The amount of time it takes to complete the figure eight
+    ~pub_freq: The frequency at which to publish the messages. This is a private parameter.
+
+
+"""
+
+import numpy
+import rospy
+import geometry_msgs
+from std_srvs.srv import Empty, EmptyResponse
+from geometry_msgs.msg import Twist, Vector3, TransformStamped
+import tf2_ros
+import tf 
+from homework2.math import math_calc
+
+class trajectory():
+    """ Publish velocities on cmd_vel as Twist messages
+    """
+
+    def __init__(self):
+
+       rospy.init_node("trajectory")
+
+       self.w = rospy.get_param("W")
+       self.h = rospy.get_param("H")
+       self.T = rospy.get_param("T")
+       self.pub_freq = rospy.get_param("~pub_freq")
+       self.mode = rospy.get_param("~mode")
+
+       if self.mode == 0:
+            self.turtle_pub = rospy.Publisher("turtle1/cmd_vel", Twist, queue_size=10)
+       elif self.mode == 1:
+            self.turtle_pub = rospy.Publisher("cmd_vel", Twist, queue_size=10)
+       
+       # Resume and Pause services
+       self.pause = rospy.Service("pause",Empty, self.pause_fnc)
+       self.resume = rospy.Service("resume", Empty, self.resume_fnc)
+       self.state = 1
+
+       #  Static transform between world and odom
+
+       self.static_broadcaster = tf2_ros.StaticTransformBroadcaster()
+       world_odom_tf = TransformStamped()
+       world_odom_tf.header.stamp = rospy.Time.now()
+       world_odom_tf.header.frame_id = "world"
+       world_odom_tf.child_frame_id = "odom"
+
+       
+       # 
+       self.initial_t = 0
+       world_odom_tf.transform.translation.x = 0
+       world_odom_tf.transform.translation.y = 0
+       world_odom_tf.transform.translation.z = 0
+       [self.v, self.omega, self.theta,  x, xdot, xddot, y, ydot, yddot] = math_calc(self.w, self.h, self.T,self.initial_t)
+       q = tf.transformations.quaternion_from_euler(0, 0,self.theta)
+       world_odom_tf.transform.rotation.x = q[0]
+       world_odom_tf.transform.rotation.y = q[1]
+       world_odom_tf.transform.rotation.z = q[2]
+       world_odom_tf.transform.rotation.w = q[3]
+       self.static_broadcaster.sendTransform(world_odom_tf)
+
+       self.t_resume = 0
+
+       while not rospy.is_shutdown():
+
+           if self.state == 0:
+               self.turtle_pub.publish(Twist(linear = Vector3(0,0,0), angular =  Vector3(0,0,0)))
+
+           elif self.state == 1:
+
+               self.rate = rospy.Rate(self.pub_freq)
+               self.t = rospy.get_time() -self.t_resume + self.initial_t
+               [self.v, self.omega, self.theta,  x, xdot, xddot, y, ydot, yddot] = math_calc(self.w, self.h, self.T, self.t)
+               self.turtle_pub.publish(Twist(linear = Vector3(self.v,0,0), angular =  Vector3(0,0,self.omega)))
+           
+    def pause_fnc(self, req):
+        """ Callback for Pause function for the turtlebot 
+            Args: None
+            Return: None
+        """
+
+        self.turtle_pub.publish(Twist(linear = Vector3(0,0,0), angular =  Vector3(0,0,0)))
+        self.state = 0
+        self.initial_t = rospy.get_time()
+        return EmptyResponse()
+
+    def resume_fnc(self, req):
+        """ Callback for the Resume function for the turtlebot 
+            Args: None
+            Return: None
+        """
+        self.t_resume = rospy.get_time()
+        [self.v, self.omega, self.theta,  x, xdot, xddot, y, ydot, yddot] = math_calc(self.w, self.h, self.T, self.initial_t)
+        self.turtle_pub.publish(Twist(linear = Vector3(self.v,0,0), angular =  Vector3(0,0,self.omega)))
+        self.state = 1
+        return EmptyResponse()
+
+def main():
+    trajectory()
+    rospy.spin()
+
+if __name__ == "__main__":
+    try:
+        main()
+    except rospy.ROSInterruptException:
+        pass
+
+
+
+        
+
+       
+
